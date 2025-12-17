@@ -1,0 +1,19 @@
+# Python
+.venv/
+__pycache__/
+*.pyc
+.ipynb_checkpoints/
+.vscode/
+
+# Data
+data/raw/
+data/processed/
+*.parquet
+*.csv
+
+# Models
+models/*.pt
+models/*.pth
+
+# OS
+.DS_Store
