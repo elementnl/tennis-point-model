@@ -1,6 +1,4 @@
-"""
-This file contains the training loop for the tennis match data
-"""
+"""Training loop for match prediction model."""
 
 import torch
 import torch.nn as nn
@@ -20,12 +18,10 @@ def train(
     lr: float = 1e-3,
     device: str = None,
 ):
-    # Device
     if device is None:
         device = "cpu"
     print(f"Using device: {device}")
 
-    # Data
     splits = create_splits(data_path)
 
     def collate_fn(batch):
@@ -47,17 +43,14 @@ def train(
         collate_fn=collate_fn,
     )
 
-    # Model
     model = PointImportanceModel().to(device)
     optimizer = torch.optim.AdamW(model.parameters(), lr=lr, weight_decay=0.01)
     scheduler = torch.optim.lr_scheduler.CosineAnnealingLR(optimizer, epochs)
 
-    # Training
     best_val_acc = 0
     history = []
 
     for epoch in range(epochs):
-        # Train
         model.train()
         train_loss = 0
         train_correct = 0
@@ -70,30 +63,26 @@ def train(
 
             optimizer.zero_grad()
 
-            # Forward pass - get predictions at each point
             probs = model(points, lengths)
 
-            # Create target: winner label repeated for each point
-            # Shape: (batch, seq_len)
+            # Expand winner label to all timesteps
             target = winner.float().unsqueeze(1).expand(-1, probs.size(1))
 
-            # Create mask for valid positions (not padding)
+            # Mask out padding
             mask = torch.arange(probs.size(1), device=device).expand(
                 len(lengths), -1
             ) < lengths.unsqueeze(1)
 
-            # Loss on all valid points
             loss = nn.functional.binary_cross_entropy(probs, target, reduction="none")
             loss = (loss * mask).sum() / mask.sum()
 
-            # Backward
             loss.backward()
             torch.nn.utils.clip_grad_norm_(model.parameters(), 1.0)
             optimizer.step()
 
             train_loss += loss.item()
 
-            # Accuracy: still use final prediction
+            # Accuracy from final timestep prediction
             final_probs = torch.stack(
                 [probs[i, lengths[i] - 1] for i in range(len(lengths))]
             )
@@ -103,7 +92,6 @@ def train(
 
         scheduler.step()
 
-        # Validate
         model.eval()
         val_loss = 0
         val_correct = 0
@@ -117,7 +105,6 @@ def train(
 
                 probs = model(points, lengths)
 
-                # Same masked loss as training
                 target = winner.float().unsqueeze(1).expand(-1, probs.size(1))
                 mask = torch.arange(probs.size(1), device=device).expand(
                     len(lengths), -1
@@ -130,7 +117,6 @@ def train(
 
                 val_loss += loss.item()
 
-                # Accuracy on final prediction
                 final_probs = torch.stack(
                     [probs[i, lengths[i] - 1] for i in range(len(lengths))]
                 )
@@ -138,7 +124,6 @@ def train(
                 val_correct += (preds == winner).sum().item()
                 val_total += len(winner)
 
-        # Metrics
         train_acc = train_correct / train_total
         val_acc = val_correct / val_total
 
@@ -160,13 +145,11 @@ def train(
             }
         )
 
-        # Save best model
         if val_acc > best_val_acc:
             best_val_acc = val_acc
             torch.save(model.state_dict(), "models/best_model.pt")
             print(f"  → Saved new best model (val_acc: {val_acc:.3f})")
 
-    # Save final model and history
     torch.save(model.state_dict(), "models/final_model.pt")
 
     with open("models/history.json", "w") as f:

@@ -40,7 +40,7 @@ class GameDataset(Dataset):
                 if pt["game1"] >= 6 and pt["game2"] >= 6:
                     continue
 
-                # New game started? (game score changed OR set changed)
+                # Check for new game (score or set changed)
                 if (
                     game_score != prev_game_score or set_score != prev_set_score
                 ) and current_game:
@@ -55,7 +55,7 @@ class GameDataset(Dataset):
                             or set_score[1] > prev_set_score[1]
                         )
 
-                    if len(current_game) >= 4:  # Valid game has at least 4 points
+                    if len(current_game) >= 4:  # Minimum 4 points per game
                         games.append(
                             {
                                 "points": current_game.copy(),
@@ -215,8 +215,7 @@ def theoretical_hold_probability(p: float = 0.65) -> dict:
     Calculate theoretical hold probability at each score,
     assuming each point is independent with server winning prob p.
     """
-    # For deuce situations, solve analytically:
-    # P(hold from deuce) = p^2 / (p^2 + (1-p)^2)
+    # Deuce solution: P(hold from deuce) = p^2 / (p^2 + (1-p)^2)
     p_deuce = (p * p) / (p * p + (1 - p) * (1 - p))
 
     memo = {}
@@ -251,7 +250,7 @@ def theoretical_hold_probability(p: float = 0.65) -> dict:
 def compare_actual_vs_theoretical(actual_probs: dict, p: float = 0.65) -> dict:
     """
     Compare actual hold probabilities to theoretical expectation.
-    Positive diff = CLUTCH, Negative diff = CHOKE
+    Positive diff = outperformance, negative = underperformance.
     """
     theoretical = theoretical_hold_probability(p)
 
@@ -270,7 +269,7 @@ def compare_actual_vs_theoretical(actual_probs: dict, p: float = 0.65) -> dict:
 
 
 def analyze_momentum(games: list[dict]) -> dict:
-    """Test if momentum is real: P(win | won last) vs P(win | lost last)"""
+    """Calculate P(win | won previous) vs P(win | lost previous)"""
     wins_after_win = 0
     total_after_win = 0
     wins_after_loss = 0
@@ -304,7 +303,7 @@ def analyze_momentum(games: list[dict]) -> dict:
 
 
 def analyze_first_point_impact(games: list[dict]) -> dict:
-    """How much does winning the first point matter?"""
+    """Calculate hold rate conditioned on first point outcome."""
     holds_won_first = 0
     total_won_first = 0
     holds_lost_first = 0
@@ -339,7 +338,7 @@ def analyze_first_point_impact(games: list[dict]) -> dict:
 
 
 def compute_point_leverage(score_probs: dict) -> dict:
-    """Compute how much winning vs losing each point changes hold probability."""
+    """Calculate swing in hold probability from winning vs losing each point."""
     leverage = {}
 
     next_if_win = {
@@ -459,9 +458,9 @@ if __name__ == "__main__":
     print(f"\nMomentum effect: {momentum['momentum_effect']:+.1%}")
 
     if abs(momentum["momentum_effect"]) < 0.02:
-        print("→ Momentum is basically a MYTH")
+        print("→ Effect negligible")
     else:
-        print(f"→ Momentum is REAL")
+        print(f"→ Effect detected")
 
     # ==========================================
     # FIRST POINT

@@ -1,6 +1,4 @@
-"""
-This file contains the PyTorch Dataset class for the tennis match data
-"""
+"""PyTorch Dataset for tennis match point sequences."""
 
 import json
 import torch
@@ -31,7 +29,7 @@ class MatchDataset(Dataset):
 
     @classmethod
     def from_json(cls, path: Path, **kwargs):
-        """Load dataset from processed JSON file"""
+        """Load dataset from JSON file."""
         with open(path) as f:
             matches = json.load(f)
         return cls(matches, **kwargs)
@@ -43,7 +41,6 @@ class MatchDataset(Dataset):
         match = self.matches[idx]
         points = match["points"]
 
-        # Encode points as feature vectors
         seq_len = min(len(points), self.max_len)
         features = torch.zeros(self.max_len, self.n_features)
 
@@ -64,8 +61,7 @@ class MatchDataset(Dataset):
                 ]
             )
 
-        # Winner: convert 1/2 to 0/1
-        winner = match["winner"] - 1
+        winner = match["winner"] - 1  # Convert 1/2 to 0/1
 
         return {
             "points": features,
@@ -81,15 +77,10 @@ def create_splits(
     val_ratio: float = 0.1,
     seed: int = 42,
 ) -> dict[str, MatchDataset]:
-    """
-    Create train/val/test splits.
-
-    Uses chronological split based on match_id (which starts with date).
-    """
+    """Create train/val/test splits chronologically by match_id."""
     with open(dataset_path) as f:
         matches = json.load(f)
 
-    # Sort by match_id
     matches.sort(key=lambda m: m["match_id"])
 
     n = len(matches)
@@ -111,7 +102,6 @@ def create_splits(
 if __name__ == "__main__":
     splits = create_splits(Path("data/processed/matches.json"))
 
-    # Print one sample
     sample = splits["train"][0]
     print(f"\nSample match: {sample['match_id']}")
     print(f"Points shape: {sample['points'].shape}")

@@ -4,6 +4,7 @@ __pycache__/
 *.pyc
 .ipynb_checkpoints/
 .vscode/
+.claude/
 
 # Data
 data/raw/

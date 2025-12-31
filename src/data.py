@@ -1,6 +1,4 @@
-"""
-This file contains the data loading and preprocessing functions
-"""
+"""Data loading and preprocessing."""
 
 import pandas as pd
 from pathlib import Path
@@ -27,13 +25,13 @@ def parse_point_score(pts_str: str, is_tiebreak: bool) -> tuple[int, int]:
     left, right = parts[0], parts[1]
 
     if is_tiebreak:
-        # If tiebreak, just parse as integers
+        # Tiebreak: parse as integers
         try:
             return int(left), int(right)
         except ValueError:
             return (0, 0)
     else:
-        # Regular game, map tennis scores to 0-3
+        # Map 0/15/30/40 to 0-3
         score_map = {"0": 0, "15": 1, "30": 2, "40": 3, "AD": 4}
         left_score = score_map.get(left, 0)
         right_score = score_map.get(right, 0)
@@ -41,9 +39,7 @@ def parse_point_score(pts_str: str, is_tiebreak: bool) -> tuple[int, int]:
 
 
 def load_points() -> pd.DataFrame:
-    """
-    Loads and combines all points files
-    """
+    """Load and combine all points files."""
     files = [
         "charting-m-points-to-2009.csv",
         "charting-m-points-2010s.csv",
@@ -62,18 +58,14 @@ def load_points() -> pd.DataFrame:
 
 
 def load_matches() -> pd.DataFrame:
-    """
-    Loads matches file
-    """
+    """Load matches file."""
     df = pd.read_csv(DATA_DIR / "charting-m-matches.csv")
     print(f"Loaded matches: {len(df)}")
     return df
 
 
 def determine_winner(match_points: pd.DataFrame) -> int:
-    """
-    Determine match winner from point data
-    """
+    """Determine match winner from point data."""
     final_point = match_points.sort_values("Pt").iloc[-1]
     return int(final_point["PtWinner"])
 
@@ -89,7 +81,6 @@ def process_match(
     match_points = points_df[points_df["match_id"] == match_id].sort_values("Pt")
     match_info = matches_df[matches_df["match_id"] == match_id].iloc[0]
 
-    # Process each point
     processed_points = []
     for _, row in match_points.iterrows():
         is_tb = row["TbSet"] == True or row["TbSet"] == "True"
@@ -121,11 +112,11 @@ def process_match(
 
 
 def process_all_matches(save_path: Path = None) -> list[dict]:
-    """Process all matches and optionally save."""
+    """Process all matches and optionally save to disk."""
     points_df = load_points()
     matches_df = load_matches()
 
-    # Get match IDs that exist in both
+    # Intersect match IDs from both sources
     match_ids = set(points_df["match_id"].unique()) & set(
         matches_df["match_id"].unique()
     )
@@ -138,7 +129,7 @@ def process_all_matches(save_path: Path = None) -> list[dict]:
 
         try:
             match_data = process_match(match_id, points_df, matches_df)
-            if len(match_data["points"]) >= 50:  # Filter very short matches
+            if len(match_data["points"]) >= 50:  # Min 50 points
                 processed.append(match_data)
         except Exception as e:
             print(f"Error processing {match_id}: {e}")

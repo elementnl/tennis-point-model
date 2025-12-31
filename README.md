@@ -48,7 +48,7 @@ The model provides real-time hold probability predictions as a match progresses,
 Clone the repository:
 
 ```bash
-git clone https://github.com/yourusername/tennis-point-model.git
+git clone https://github.com/elementnl/tennis-point-model.git
 cd tennis-point-model
 ```
 
@@ -136,11 +136,11 @@ If you use this code or methodology in your research, please cite:
 
 ```
 @misc{tennis-point-leverage,
-  author = {Your Name},
+  author = {Varun},
   title = {Quantifying Point Leverage in Tennis: An LSTM Approach},
   year = {2024},
   publisher = {GitHub},
-  url = {https://github.com/yourusername/tennis-point-model}
+  url = {https://github.com/elementnl/tennis-point-model}
 }
 ```
 

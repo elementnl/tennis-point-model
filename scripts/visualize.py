@@ -1,5 +1,5 @@
 """
-Create all visualizations for Reddit post.
+Create all visualizations
 Uses both match-level model (win probability) and game-level analysis.
 """
 
@@ -399,7 +399,7 @@ def generate_all_visualizations():
     print("\n[5/5] First point impact...")
     plot_first_point_impact()
 
-    # Match-level visualization (uses 90-min model)
+    # Match-level visualization
     print("\n[Bonus] Generating match timeline for a famous match...")
 
     try:
